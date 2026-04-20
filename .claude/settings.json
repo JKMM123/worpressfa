@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun --version)",
+      "Bash(dotnet --version)",
+      "Bash(psql --version)",
+      "Bash(mkdir -p sme-kpi-dashboard)",
+      "Bash(dotnet new *)",
+      "Bash(dotnet add *)",
+      "Read(//c/Users/user/AppData/Local/Temp/claude/c--Users-user-Desktop-sem-6-I---3330-project-mangement-copy/4b5c6a96-9dd8-453b-930c-a13f1345afde/tasks/**)",
+      "Read(//c/c/Users/user/Desktop/sem 6/I - 3330 project mangement/copy/sme-kpi-dashboard/server/**)",
+      "Bash(dotnet build *)",
+      "Bash(PGPASSWORD=joe123 psql -U postgres -c \"CREATE DATABASE sme_kpi_db;\")",
+      "Bash(dotnet ef *)",
+      "Bash(PGPASSWORD=joe123 psql -U postgres -d sme_kpi_db -c \"\\\\dt\")",
+      "Bash(bun install *)",
+      "Bash(bun run *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k: d.get\\(k\\) for k in ['exports','imports','typesVersions']}, indent=2\\)\\)\")",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('/c/Users/user/Desktop/sem 6/I - 3330 project mangement/copy/sme-kpi-dashboard/client/node_modules/@quasar/app-vite/package.json'\\)\\); print\\(json.dumps\\(d.get\\('imports',{}\\), indent=2\\)[:500]\\)\")",
+      "Bash(timeout 10 dotnet run)"
+    ]
+  }
+}

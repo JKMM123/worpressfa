@@ -1,0 +1,63 @@
+# =========================
+# VUE.JS / FRONTEND
+# =========================
+# Dependencies
+node_modules/
+
+# Production builds
+dist/
+dist-ssr/
+build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment Variables (Never commit secrets!)
+.env
+.env.local
+.env.*.local
+
+# Editor/Linter caches
+.eslintcache
+.vscode/
+
+# =========================
+# .NET / BACKEND
+# =========================
+# Build results
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+
+# Visual Studio / IDE folders
+.vs/
+.idea/
+*.user
+*.suo
+*.rsuser
+
+# User-specific application settings
+appsettings.Development.json
+appsettings.Local.json
+
+# NuGet packages (if local)
+packages/
+*.nupkg
+
+# =========================
+# OS / GENERAL
+# =========================
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/

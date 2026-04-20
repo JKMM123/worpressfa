@@ -1,0 +1,6 @@
+@SmeKpiDashboard_HostAddress = http://localhost:5056
+
+GET {{SmeKpiDashboard_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
