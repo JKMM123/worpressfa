@@ -1,5 +1,10 @@
-import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
+import { route } from 'quasar/wrappers'
+import { createRouter, createWebHashHistory, type RouteRecordRaw, type Router } from 'vue-router'
+
+
 import { useAuthStore } from 'src/stores/authStore'
+
+export let router: Router
 
 const routes: RouteRecordRaw[] = [
   {
@@ -53,28 +58,29 @@ const routes: RouteRecordRaw[] = [
   }
 ]
 
-export const router = createRouter({
-  history: createWebHashHistory(),
-  routes
+export default route(function ({ store }: any) {
+  router = createRouter({
+    history: createWebHashHistory(),
+    routes
+  })
+
+  router.beforeEach(async (to) => {
+    const authStore = useAuthStore(store)
+
+    if (!authStore.isAuthenticated && authStore.refreshTokenValue) {
+      await authStore.refreshToken()
+    }
+
+    const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
+
+    if (requiresAuth && !authStore.isAuthenticated) {
+      return { name: 'login' }
+    }
+
+    if ((to.name === 'login' || to.name === 'register') && authStore.isAuthenticated) {
+      return { name: 'dashboard' }
+    }
+  })
+
+  return router
 })
-
-router.beforeEach(async (to) => {
-  const authStore = useAuthStore()
-
-  // Attempt to restore session from stored refresh token on first load
-  if (!authStore.isAuthenticated && authStore.refreshTokenValue) {
-    await authStore.refreshToken()
-  }
-
-  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
-
-  if (requiresAuth && !authStore.isAuthenticated) {
-    return { name: 'login' }
-  }
-
-  if ((to.name === 'login' || to.name === 'register') && authStore.isAuthenticated) {
-    return { name: 'dashboard' }
-  }
-})
-
-export default router
