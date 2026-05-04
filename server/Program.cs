@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SmeKpiDashboard.Data;
+using SmeKpiDashboard.Models;
 using SmeKpiDashboard.Repositories;
 using SmeKpiDashboard.Services;
 
@@ -57,6 +58,25 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+
+    var adminExists = await db.Users.AnyAsync(u => u.Email == "admin");
+    if (!adminExists)
+    {
+        db.Users.Add(new User
+        {
+            Email = "admin",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin"),
+            BusinessName = "Admin"
+        });
+
+        await db.SaveChangesAsync();
+    }
+}
 
 if (app.Environment.IsDevelopment())
 {

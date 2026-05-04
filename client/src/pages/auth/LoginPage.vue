@@ -3,11 +3,11 @@
     <q-form class="q-gutter-md" @submit.prevent="handleLogin">
       <q-input
         v-model="form.email"
-        type="email"
-        label="Email"
+        type="text"
+        label="Email or admin"
         outlined
         dense
-        :rules="[required, validEmail]"
+        :rules="[required, validLogin]"
         lazy-rules
       />
 
@@ -64,7 +64,7 @@ const loading = ref(false)
 const errorMessage = ref('')
 
 const required = (val: string) => !!val || 'This field is required'
-const validEmail = (val: string) => /.+@.+\..+/.test(val) || 'Enter a valid email'
+const validLogin = (val: string) => val === 'admin' || /.+@.+\..+/.test(val) || 'Enter a valid email or admin'
 
 async function handleLogin() {
   loading.value = true
