@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmeKpiDashboard.Services;
@@ -18,8 +19,11 @@ public class DashboardController : ControllerBase
 
     private Guid GetUserId()
     {
-        var userIdClaim = User.FindFirst("sub")?.Value;
-        return Guid.Parse(userIdClaim!);
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(userIdClaim))
+            throw new UnauthorizedAccessException("User ID claim is missing. Please log in again.");
+        return Guid.Parse(userIdClaim);
     }
 
     [HttpGet("kpi-summary")]
