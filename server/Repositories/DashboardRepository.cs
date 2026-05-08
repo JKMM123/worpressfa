@@ -24,7 +24,7 @@ public class DashboardRepository : IDashboardRepository
             .SumAsync(e => (decimal?)e.Amount) ?? 0;
 
         var now = DateTime.UtcNow;
-        var thisMonthStart = new DateTime(now.Year, now.Month, 1);
+        var thisMonthStart = DateTime.SpecifyKind(new DateTime(now.Year, now.Month, 1), DateTimeKind.Utc);
         var lastMonthStart = thisMonthStart.AddMonths(-1);
 
         var thisMonthRevenue = await _context.Sales
@@ -85,7 +85,7 @@ public class DashboardRepository : IDashboardRepository
 
     public async Task<MonthlyReportResponse> GetMonthlyReportAsync(Guid userId, int year, int month)
     {
-        var startDate = new DateTime(year, month, 1);
+        var startDate = DateTime.SpecifyKind(new DateTime(year, month, 1), DateTimeKind.Utc);
         var endDate = startDate.AddMonths(1);
 
         var totalSales = await _context.Sales
