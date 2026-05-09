@@ -14,6 +14,12 @@
       bordered
       :no-data-label="'No sales yet. Click \'Add Sale\' to get started.'"
     >
+      <template #body-cell-product="props">
+        <q-td :props="props">
+          {{ props.row.productName ?? '—' }}
+        </q-td>
+      </template>
+
       <template #body-cell-amount="props">
         <q-td :props="props" class="text-positive text-weight-medium">
           ${{ props.row.amount.toFixed(2) }}
@@ -36,7 +42,7 @@
 
     <!-- Add/Edit Dialog -->
     <q-dialog v-model="showDialog" persistent>
-      <q-card style="min-width: 420px">
+      <q-card style="min-width: 440px">
         <q-card-section class="row items-center">
           <div class="text-h6">{{ isEditing ? 'Edit Sale' : 'Add Sale' }}</div>
           <q-space />
@@ -47,18 +53,54 @@
 
         <q-card-section>
           <q-form @submit.prevent="saveSale" class="q-gutter-md">
-            <q-input
-              v-model.number="form.amount"
-              label="Amount ($)"
-              type="number"
-              step="0.01"
-              min="0.01"
+            <!-- Product select (only for new sales) -->
+            <q-select
+              v-if="!isEditing"
+              v-model="selectedProduct"
+              :options="productOptions"
+              option-label="label"
+              option-value="value"
+              emit-value
+              map-options
+              label="Product *"
               outlined
-              :rules="[val => val > 0 || 'Amount must be greater than 0']"
+              :rules="[val => !!val || 'Please select a product']"
+              @update:model-value="onProductSelected"
+            >
+              <template #option="scope">
+                <q-item v-bind="scope.itemProps">
+                  <q-item-section>
+                    <q-item-label>{{ scope.opt.label }}</q-item-label>
+                    <q-item-label caption>
+                      ${{ scope.opt.price.toFixed(2) }} · Stock: {{ scope.opt.stock }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </template>
+            </q-select>
+
+            <!-- Price display (auto-filled, read-only) -->
+            <q-input
+              v-if="!isEditing"
+              :model-value="selectedProductPrice ? `$${selectedProductPrice.toFixed(2)}` : ''"
+              label="Unit Price (auto-filled)"
+              outlined
+              readonly
+              :hint="selectedProductPrice ? 'Amount is set from the product price' : ''"
             />
+
+            <!-- Product name display (edit mode) -->
+            <q-input
+              v-if="isEditing"
+              :model-value="currentSale?.productName ?? '—'"
+              label="Product"
+              outlined
+              readonly
+            />
+
             <q-input
               v-model="form.date"
-              label="Date"
+              label="Date *"
               type="date"
               outlined
               :rules="[val => !!val || 'Date is required', val => !isFutureDate(val) || 'Date cannot be in the future']"
@@ -87,7 +129,9 @@
           <div class="text-h6">Confirm Delete</div>
         </q-card-section>
         <q-card-section>
-          Are you sure you want to delete this sale for <strong>${{ currentSale?.amount.toFixed(2) }}</strong>?
+          Are you sure you want to delete the sale for
+          <strong>{{ currentSale?.productName ?? 'this item' }}</strong>
+          (${{ currentSale?.amount.toFixed(2) }})?
         </q-card-section>
         <q-card-actions align="right">
           <q-btn label="Cancel" flat @click="showDeleteDialog = false" />
@@ -99,32 +143,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { salesApi, type Sale, type SaleRequest } from 'src/services/apiService'
+import { ref, onMounted, computed } from 'vue'
+import { salesApi, productsApi, type Sale, type SaleRequest, type Product } from 'src/services/apiService'
 import { useQuasar } from 'quasar'
 
 const $q = useQuasar()
 
 const sales = ref<Sale[]>([])
+const products = ref<Product[]>([])
 const loading = ref(false)
 const saving = ref(false)
 const showDialog = ref(false)
 const showDeleteDialog = ref(false)
 const isEditing = ref(false)
 const currentSale = ref<Sale | null>(null)
+const selectedProduct = ref<string | null>(null)
+const selectedProductPrice = ref<number | null>(null)
 
 const form = ref<SaleRequest>({
-  amount: 0,
+  productId: '',
   date: todayString(),
   description: '',
 })
 
 const columns = [
-  { name: 'date', label: 'Date', field: 'date', sortable: true, align: 'left' as const },
+  { name: 'product', label: 'Product', field: 'productName', sortable: true, align: 'left' as const },
   { name: 'amount', label: 'Amount', field: 'amount', sortable: true, align: 'left' as const },
+  { name: 'date', label: 'Date', field: 'date', sortable: true, align: 'left' as const },
   { name: 'description', label: 'Description', field: 'description', align: 'left' as const },
   { name: 'actions', label: 'Actions', field: 'actions', align: 'center' as const },
 ]
+
+const productOptions = computed(() =>
+  products.value.map(p => ({
+    label: p.name,
+    value: p.id,
+    price: p.price,
+    stock: p.stockQuantity,
+  }))
+)
 
 function todayString() {
   return new Date().toISOString().split('T')[0]
@@ -136,6 +193,12 @@ function formatDate(dateStr: string) {
 
 function isFutureDate(dateStr: string) {
   return new Date(dateStr) > new Date()
+}
+
+function onProductSelected(productId: string) {
+  const product = products.value.find(p => p.id === productId)
+  selectedProductPrice.value = product?.price ?? null
+  form.value.productId = productId
 }
 
 async function fetchSales() {
@@ -150,10 +213,21 @@ async function fetchSales() {
   }
 }
 
+async function fetchProducts() {
+  try {
+    const response = await productsApi.getAll()
+    products.value = response.data
+  } catch {
+    $q.notify({ type: 'negative', message: 'Failed to load products' })
+  }
+}
+
 function openAddDialog() {
   isEditing.value = false
   currentSale.value = null
-  form.value = { amount: 0, date: todayString(), description: '' }
+  selectedProduct.value = null
+  selectedProductPrice.value = null
+  form.value = { productId: '', date: todayString(), description: '' }
   showDialog.value = true
 }
 
@@ -161,7 +235,7 @@ function openEditDialog(sale: Sale) {
   isEditing.value = true
   currentSale.value = sale
   form.value = {
-    amount: sale.amount,
+    productId: sale.productId ?? '',
     date: sale.date.split('T')[0],
     description: sale.description,
   }
@@ -179,9 +253,12 @@ async function saveSale() {
       $q.notify({ type: 'positive', message: 'Sale created successfully' })
     }
     showDialog.value = false
-    await fetchSales()
-  } catch {
-    $q.notify({ type: 'negative', message: 'Failed to save sale' })
+    await Promise.all([fetchSales(), fetchProducts()])
+  } catch (err: unknown) {
+    const msg =
+      (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+      'Failed to save sale'
+    $q.notify({ type: 'negative', message: msg })
   } finally {
     saving.value = false
   }
@@ -207,5 +284,5 @@ async function deleteSale() {
   }
 }
 
-onMounted(fetchSales)
+onMounted(() => Promise.all([fetchSales(), fetchProducts()]))
 </script>

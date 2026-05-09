@@ -5,8 +5,7 @@ namespace SmeKpiDashboard.DTOs;
 public class SaleRequest
 {
     [Required]
-    [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than 0")]
-    public decimal Amount { get; set; }
+    public Guid ProductId { get; set; }
 
     [Required]
     public DateTime Date { get; set; }

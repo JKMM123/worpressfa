@@ -6,4 +6,5 @@ public interface IDashboardService
 {
     Task<KpiSummaryResponse> GetKpiSummaryAsync(Guid userId);
     Task<ChartDataResponse> GetChartDataAsync(Guid userId);
+    Task<List<ExpenseByCategoryResponse>> GetExpenseDistributionAsync(Guid userId);
 }

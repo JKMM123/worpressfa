@@ -7,10 +7,12 @@ namespace SmeKpiDashboard.Services;
 public class SalesService : ISalesService
 {
     private readonly ISaleRepository _repository;
+    private readonly IProductRepository _productRepository;
 
-    public SalesService(ISaleRepository repository)
+    public SalesService(ISaleRepository repository, IProductRepository productRepository)
     {
         _repository = repository;
+        _productRepository = productRepository;
     }
 
     public async Task<List<SaleResponse>> GetAllAsync(Guid userId)
@@ -30,14 +32,24 @@ public class SalesService : ISalesService
         if (request.Date.ToUniversalTime() > DateTime.UtcNow)
             throw new ArgumentException("Date cannot be in the future");
 
+        var product = await _productRepository.GetByIdAsync(request.ProductId, userId)
+            ?? throw new KeyNotFoundException("Product not found or does not belong to this user");
+
+        if (product.StockQuantity < 1)
+            throw new InvalidOperationException("Insufficient stock");
+
         var sale = new Sale
         {
             UserId = userId,
-            Amount = request.Amount,
+            ProductId = product.Id,
+            Amount = product.Price,
             Date = request.Date.ToUniversalTime(),
             Description = request.Description,
             CreatedAt = DateTime.UtcNow
         };
+
+        product.StockQuantity -= 1;
+        await _productRepository.UpdateAsync(product);
 
         var created = await _repository.CreateAsync(sale);
         return MapToResponse(created);
@@ -51,7 +63,6 @@ public class SalesService : ISalesService
         if (request.Date.ToUniversalTime() > DateTime.UtcNow)
             throw new ArgumentException("Date cannot be in the future");
 
-        existing.Amount = request.Amount;
         existing.Date = request.Date.ToUniversalTime();
         existing.Description = request.Description;
 
@@ -67,6 +78,8 @@ public class SalesService : ISalesService
     private static SaleResponse MapToResponse(Sale sale) => new()
     {
         Id = sale.Id,
+        ProductId = sale.ProductId,
+        ProductName = sale.Product?.Name,
         Amount = sale.Amount,
         Date = sale.Date,
         Description = sale.Description,

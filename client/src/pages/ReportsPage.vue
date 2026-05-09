@@ -1,9 +1,9 @@
 <template>
   <q-page class="q-pa-lg">
-    <div class="page-title q-mb-lg">Reports</div>
+    <div class="page-title q-mb-lg no-print">Reports</div>
 
     <!-- Month/Year Selector -->
-    <q-card flat bordered class="q-mb-lg">
+    <q-card flat bordered class="q-mb-lg no-print">
       <q-card-section>
         <div class="text-subtitle1 text-weight-medium q-mb-md">Generate Monthly Report</div>
         <div class="row q-col-gutter-md items-end">
@@ -41,8 +41,23 @@
 
     <!-- Report Display -->
     <template v-if="report">
-      <div class="text-h6 q-mb-md">
-        {{ monthLabel }} {{ report.year }}
+      <!-- Print header (only visible when printing) -->
+      <div class="print-only print-header q-mb-md">
+        <div class="text-h5 text-weight-bold">Monthly Financial Report</div>
+      </div>
+
+      <div class="row items-center justify-between q-mb-md">
+        <div class="text-h6">
+          {{ monthLabel }} {{ report.year }}
+        </div>
+        <q-btn
+          class="no-print"
+          color="primary"
+          icon="print"
+          label="Download / Print"
+          outline
+          @click="printReport"
+        />
       </div>
 
       <!-- Summary Cards -->
@@ -102,7 +117,7 @@
     </template>
 
     <!-- Empty state -->
-    <div v-else class="text-center q-pa-xl text-grey-5">
+    <div v-else class="text-center q-pa-xl text-grey-5 no-print">
       <q-icon name="bar_chart" size="4rem" />
       <div class="q-mt-md">Select a month and year, then click "Generate Report"</div>
     </div>
@@ -144,15 +159,50 @@ function formatCurrency(value: number): string {
   return `$${value.toFixed(2)}`
 }
 
+function printReport() {
+  window.print()
+}
+
 async function fetchReport() {
   loading.value = true
   try {
     const response = await reportsApi.getMonthlyReport(selectedYear.value, selectedMonth.value)
     report.value = response.data
-  } catch {
-    $q.notify({ type: 'negative', message: 'Failed to generate report' })
+  } catch (err: unknown) {
+    const msg =
+      (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+      'Failed to generate report'
+    $q.notify({ type: 'negative', message: msg })
   } finally {
     loading.value = false
   }
 }
 </script>
+
+<style>
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .q-card {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+  }
+}
+
+@media screen {
+  .print-only {
+    display: none;
+  }
+}
+</style>

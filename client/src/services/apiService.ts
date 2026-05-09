@@ -2,6 +2,8 @@ import { api } from './api'
 
 export interface Sale {
   id: string
+  productId?: string
+  productName?: string
   amount: number
   date: string
   description: string
@@ -9,7 +11,7 @@ export interface Sale {
 }
 
 export interface SaleRequest {
-  amount: number
+  productId: string
   date: string
   description: string
 }
@@ -63,6 +65,8 @@ export interface KpiSummary {
   totalExpenses: number
   netProfit: number
   growthPercentage: number
+  topSellingProductName?: string
+  lowStockAlertCount: number
 }
 
 export interface ChartData {
@@ -74,16 +78,18 @@ export interface ChartData {
   }[]
 }
 
+export interface ExpenseCategory {
+  category: string
+  total: number
+}
+
 export interface MonthlyReport {
   year: number
   month: number
   totalSales: number
   totalExpenses: number
   netProfit: number
-  expensesByCategory: {
-    category: string
-    total: number
-  }[]
+  expensesByCategory: ExpenseCategory[]
 }
 
 export const salesApi = {
@@ -121,6 +127,7 @@ export const customersApi = {
 export const dashboardApi = {
   getKpiSummary: () => api.get<KpiSummary>('/dashboard/kpi-summary'),
   getChartData: () => api.get<ChartData>('/dashboard/chart-data'),
+  getExpenseDistribution: () => api.get<ExpenseCategory[]>('/dashboard/expense-distribution'),
 }
 
 export const reportsApi = {

@@ -52,6 +52,14 @@ public class SalesController : ControllerBase
             var created = await _service.CreateAsync(request, GetUserId());
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
+        catch (KeyNotFoundException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
         catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });

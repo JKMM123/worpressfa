@@ -39,12 +39,35 @@ public class DashboardRepository : IDashboardRepository
             ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
             : 0;
 
+        // Top selling product (by sales count)
+        var topProductGroup = await _context.Sales
+            .Where(s => s.UserId == userId && s.ProductId != null)
+            .GroupBy(s => s.ProductId)
+            .Select(g => new { ProductId = g.Key, Count = g.Count() })
+            .OrderByDescending(g => g.Count)
+            .FirstOrDefaultAsync();
+
+        string? topProductName = null;
+        if (topProductGroup?.ProductId != null)
+        {
+            topProductName = await _context.Products
+                .Where(p => p.Id == topProductGroup.ProductId && p.UserId == userId)
+                .Select(p => p.Name)
+                .FirstOrDefaultAsync();
+        }
+
+        var lowStockCount = await _context.Products
+            .Where(p => p.UserId == userId && p.StockQuantity < 5)
+            .CountAsync();
+
         return new KpiSummaryResponse
         {
             TotalRevenue = totalRevenue,
             TotalExpenses = totalExpenses,
             NetProfit = totalRevenue - totalExpenses,
-            GrowthPercentage = Math.Round(growth, 2)
+            GrowthPercentage = Math.Round(growth, 2),
+            TopSellingProductName = topProductName,
+            LowStockAlertCount = lowStockCount
         };
     }
 
@@ -115,5 +138,19 @@ public class DashboardRepository : IDashboardRepository
             NetProfit = totalSales - totalExpenses,
             ExpensesByCategory = expensesByCategory
         };
+    }
+
+    public async Task<List<ExpenseByCategoryResponse>> GetExpenseDistributionAsync(Guid userId)
+    {
+        return await _context.Expenses
+            .Where(e => e.UserId == userId)
+            .GroupBy(e => e.Category)
+            .Select(g => new ExpenseByCategoryResponse
+            {
+                Category = g.Key,
+                Total = g.Sum(e => e.Amount)
+            })
+            .OrderByDescending(x => x.Total)
+            .ToListAsync();
     }
 }

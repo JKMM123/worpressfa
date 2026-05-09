@@ -21,4 +21,9 @@ public class DashboardService : IDashboardService
     {
         return await _repository.GetChartDataAsync(userId);
     }
+
+    public async Task<List<ExpenseByCategoryResponse>> GetExpenseDistributionAsync(Guid userId)
+    {
+        return await _repository.GetExpenseDistributionAsync(userId);
+    }
 }

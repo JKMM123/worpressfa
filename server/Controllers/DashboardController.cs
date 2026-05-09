@@ -39,4 +39,11 @@ public class DashboardController : ControllerBase
         var chartData = await _service.GetChartDataAsync(GetUserId());
         return Ok(chartData);
     }
+
+    [HttpGet("expense-distribution")]
+    public async Task<IActionResult> GetExpenseDistribution()
+    {
+        var distribution = await _service.GetExpenseDistributionAsync(GetUserId());
+        return Ok(distribution);
+    }
 }

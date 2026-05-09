@@ -16,6 +16,7 @@ public class SaleRepository : ISaleRepository
     public async Task<List<Sale>> GetAllByUserIdAsync(Guid userId)
     {
         return await _context.Sales
+            .Include(s => s.Product)
             .Where(s => s.UserId == userId)
             .OrderByDescending(s => s.Date)
             .ToListAsync();
@@ -24,6 +25,7 @@ public class SaleRepository : ISaleRepository
     public async Task<Sale?> GetByIdAsync(Guid id, Guid userId)
     {
         return await _context.Sales
+            .Include(s => s.Product)
             .FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
     }
 
@@ -31,6 +33,7 @@ public class SaleRepository : ISaleRepository
     {
         _context.Sales.Add(sale);
         await _context.SaveChangesAsync();
+        await _context.Entry(sale).Reference(s => s.Product).LoadAsync();
         return sale;
     }
 
@@ -38,12 +41,13 @@ public class SaleRepository : ISaleRepository
     {
         _context.Sales.Update(sale);
         await _context.SaveChangesAsync();
+        await _context.Entry(sale).Reference(s => s.Product).LoadAsync();
         return sale;
     }
 
     public async Task DeleteAsync(Guid id, Guid userId)
     {
-        var sale = await GetByIdAsync(id, userId);
+        var sale = await _context.Sales.FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
         if (sale != null)
         {
             _context.Sales.Remove(sale);
