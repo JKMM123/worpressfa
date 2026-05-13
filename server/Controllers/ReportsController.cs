@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmeKpiDashboard.Services;
@@ -18,8 +19,13 @@ public class ReportsController : ControllerBase
 
     private Guid GetUserId()
     {
-        var userIdClaim = User.FindFirst("sub")?.Value;
-        return Guid.Parse(userIdClaim!);
+        // ASP.NET's JWT middleware maps the "sub" claim to ClaimTypes.NameIdentifier;
+        // fall back to the raw "sub" name for clients that skip claim mapping.
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(userIdClaim))
+            throw new UnauthorizedAccessException("User ID claim is missing. Please log in again.");
+        return Guid.Parse(userIdClaim);
     }
 
     [HttpGet("monthly")]
@@ -33,6 +39,10 @@ public class ReportsController : ControllerBase
         catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
         }
     }
 }

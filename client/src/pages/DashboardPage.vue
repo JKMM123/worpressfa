@@ -156,7 +156,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { dashboardApi, type KpiSummary, type ExpenseCategory } from 'src/services/apiService'
 import { Chart, registerables } from 'chart.js'
 import { useQuasar } from 'quasar'
@@ -182,10 +182,16 @@ const kpi = ref<KpiSummary>({
   lowStockAlertCount: 0,
 })
 
-const DOUGHNUT_COLORS = [
-  '#0f766e', '#3b82f6', '#f59e0b', '#ef4444',
-  '#8b5cf6', '#10b981', '#f97316', '#6366f1',
-]
+// Stable per-category colors so slices never change color between renders
+const CATEGORY_COLORS: Record<string, string> = {
+  'Operating Costs': '#0f766e',
+  'Marketing':       '#3b82f6',
+  'Salaries':        '#f59e0b',
+  'Inventory':       '#ef4444',
+  'Utilities':       '#8b5cf6',
+  'Other':           '#10b981',
+}
+const FALLBACK_COLORS = ['#f97316', '#6366f1', '#06b6d4', '#84cc16']
 
 function formatCurrency(value: number): string {
   return `$${value.toFixed(2)}`
@@ -201,8 +207,10 @@ async function fetchData() {
       dashboardApi.getExpenseDistribution(),
     ])
     kpi.value = kpiRes.data
-    expenseDistribution.value = distRes.data
     renderLineChart(chartRes.data.monthlyData)
+    expenseDistribution.value = distRes.data
+    // Wait for Vue to mount the canvas (guarded by v-else on expenseDistribution.length)
+    await nextTick()
     renderDoughnutChart(distRes.data)
   } catch {
     $q.notify({ type: 'negative', message: 'Failed to load dashboard data' })
@@ -289,7 +297,9 @@ function renderDoughnutChart(distribution: ExpenseCategory[]) {
       datasets: [
         {
           data: distribution.map(d => d.total),
-          backgroundColor: distribution.map((_, i) => DOUGHNUT_COLORS[i % DOUGHNUT_COLORS.length]),
+          backgroundColor: distribution.map((d, i) =>
+            CATEGORY_COLORS[d.category] ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length]
+          ),
           borderWidth: 2,
           borderColor: 'transparent',
         },

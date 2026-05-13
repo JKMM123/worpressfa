@@ -6,13 +6,14 @@
     <q-card flat bordered class="q-mb-lg no-print">
       <q-card-section>
         <div class="text-subtitle1 text-weight-medium q-mb-md">Generate Monthly Report</div>
-        <div class="row q-col-gutter-md items-end">
+        <div class="row q-col-gutter-md items-center">
           <div class="col-12 col-sm-4 col-md-3">
             <q-select
               v-model="selectedMonth"
               :options="monthOptions"
               label="Month"
               outlined
+              dense
               emit-value
               map-options
             />
@@ -23,14 +24,17 @@
               label="Year"
               type="number"
               outlined
-              :rules="[val => (val >= 2000 && val <= 2100) || 'Enter a valid year']"
+              dense
+              :rules="[val => (val >= 2000 && val <= 2100) || 'Enter a valid year (2000–2100)']"
             />
           </div>
-          <div class="col-12 col-sm-4 col-md-3">
+          <div class="col-12 col-sm-4 col-md-auto">
             <q-btn
               color="primary"
               label="Generate Report"
               icon="bar_chart"
+              unelevated
+              no-wrap
               :loading="loading"
               @click="fetchReport"
             />

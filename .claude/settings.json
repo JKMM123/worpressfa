@@ -23,7 +23,10 @@
       "Bash(Sort-Object FullName)",
       "Bash(Format-Table -AutoSize)",
       "Bash(npx tsc *)",
-      "Bash(node_modules\\\\.bin\\\\tsc --noEmit)"
+      "Bash(node_modules\\\\.bin\\\\tsc --noEmit)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\user\\\\Desktop\\\\sem 6\\\\I - 3330 project mangement\\\\copy\" -Recurse -Directory)",
+      "Bash(Select-Object -First 50)",
+      "Bash(Format-List FullName)"
     ]
   }
 }
