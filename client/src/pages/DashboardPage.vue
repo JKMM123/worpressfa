@@ -147,7 +147,11 @@
                 <div class="q-mt-sm">No expense data</div>
               </div>
             </div>
-            <canvas v-else ref="doughnutChartCanvas" style="max-height: 280px;" />
+            <canvas
+              ref="doughnutChartCanvas"
+              v-show="!chartLoading && expenseDistribution.length > 0"
+              style="max-height: 280px;"
+            />
           </q-card-section>
         </q-card>
       </div>
@@ -209,7 +213,7 @@ async function fetchData() {
     kpi.value = kpiRes.data
     renderLineChart(chartRes.data.monthlyData)
     expenseDistribution.value = distRes.data
-    // Wait for Vue to mount the canvas (guarded by v-else on expenseDistribution.length)
+    // Ensure refs are resolved before drawing charts
     await nextTick()
     renderDoughnutChart(distRes.data)
   } catch {
